@@ -18,6 +18,8 @@ env:
   DEPLOY_TYPE: dev
 
   SRC_HTTP_ADDR: ':3082'
+  SOURCEGRAPHDOTCOM_MODE: 'true'
+  SRC_DISABLE_PROFILER: 'true'
 
   GITHUB_BASE_URL: http://127.0.0.1:3180
   # I don't think we even need to set these?

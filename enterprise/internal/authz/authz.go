@@ -42,7 +42,11 @@ func ProvidersFromConfig(
 	allowAccessByDefault = true
 	defer func() {
 		if len(seriousProblems) > 0 {
-			log15.Error("Repository authz config was invalid (errors are visible in the UI as an admin user, you should fix ASAP). Restricting access to repositories by default for now to be safe.", "seriousProblems", seriousProblems)
+			log15.Error(
+				"Repository authz config was invalid (errors are visible in the UI as an admin user, you should fix ASAP). Restricting access to repositories by default for now to be safe.",
+				"seriousProblems",
+				seriousProblems,
+			)
 			allowAccessByDefault = false
 		}
 	}()
@@ -77,9 +81,16 @@ func ProvidersFromConfig(
 		opt.AfterID = svcs[len(svcs)-1].ID // Advance the cursor
 
 		for _, svc := range svcs {
+			if svc.CloudDefault { // Only public repos in CloudDefault services
+				continue
+			}
+
 			cfg, err := extsvc.ParseConfig(svc.Kind, svc.Config)
 			if err != nil {
-				seriousProblems = append(seriousProblems, fmt.Sprintf("Could not parse config of external service %d: %v", svc.ID, err))
+				seriousProblems = append(
+					seriousProblems,
+					fmt.Sprintf("Could not parse config of external service %d: %v", svc.ID, err),
+				)
 				continue
 			}
 
@@ -155,7 +166,8 @@ func ProvidersFromConfig(
 			}
 			msg := fmt.Sprintf(
 				"The permissions user mapping (site configuration `permissions.userMapping`) cannot be enabled when %s authorization providers are in use. Blocking access to all repositories until the conflict is resolved.",
-				strings.Join(serviceTypes, ", "))
+				strings.Join(serviceTypes, ", "),
+			)
 			seriousProblems = append(seriousProblems, msg)
 		}
 	}
