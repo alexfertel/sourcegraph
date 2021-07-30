@@ -175,9 +175,6 @@ Environment=HOME="%h"
 [Install]
 WantedBy=multi-user.target
 EOF
-
-  # Enable the new service
-  systemctl enable executor
 }
 
 ###############################
