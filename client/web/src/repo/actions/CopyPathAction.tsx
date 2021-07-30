@@ -9,12 +9,12 @@ import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggl
 
 import { eventLogger } from '../../tracking/eventLogger'
 
-import styles from './CopyLinkAction.module.scss'
+import styles from './CopyPathAction.module.scss'
 
 /**
  * A repository header action that copies the current page's URL to the clipboard.
  */
-export const CopyLinkAction: React.FunctionComponent = () => {
+export const CopyPathAction: React.FunctionComponent = () => {
     const [isRedesignEnabled] = useRedesignToggle()
     const location = useLocation()
     const [copied, setCopied] = useState(false)
@@ -25,10 +25,11 @@ export const CopyLinkAction: React.FunctionComponent = () => {
 
     const onClick = (event: React.MouseEvent<HTMLButtonElement>): void => {
         event.preventDefault()
-        eventLogger.log('ShareButtonClicked')
-        const shareLink = new URL(location.pathname + location.search + location.hash, window.location.href)
-        shareLink.searchParams.set('utm_source', 'share')
-        copy(shareLink.href)
+        eventLogger.log('CopyFilePath')
+        console.log(`Input: ${location.pathname}`)
+        // strip prefixes for URL paths matching `/-/blob/` (filepaths), `/-/tree/` (directory paths), and leading `/` (repository paths).
+        const path = location.pathname.replace(/(^.*?\/-\/(blob|tree)\/)|(^\/)/, '')
+        copy(path)
 
         setCopied(true)
 
@@ -41,8 +42,8 @@ export const CopyLinkAction: React.FunctionComponent = () => {
         <button
             type="button"
             className={classNames('btn btn-icon', isRedesignEnabled && 'btn-sm p-2', !isRedesignEnabled && 'my-2')}
-            data-tooltip={copied ? 'Copied!' : 'Copy link to clipboard'}
-            aria-label="Copy link"
+            data-tooltip={copied ? 'Copied!' : 'Copy path to clipboard'}
+            aria-label="Copy path"
             onClick={onClick}
         >
             <ContentCopyIcon className={classNames('icon-inline', styles.copyIcon)} />
