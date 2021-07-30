@@ -183,7 +183,7 @@ EOF
 install_git
 install_logging_agent
 install_monitoring_agent
-increase_inotify_limit # This must happen before we install docker, because docker might just pick up the limit on startup. (c) efritz 2021.
+increase_inotify_limit
 install_docker
 setup_pull_through_docker_cache
 install_ignite
