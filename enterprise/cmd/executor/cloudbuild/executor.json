@@ -1,6 +1,7 @@
 {
   "variables": {
-    "version": "{{env `VERSION`}}"
+    "version": "{{env `VERSION`}}",
+    "SRC_CLI_VERSION": "{{env `SRC_CLI_VERSION`}}"
   },
   "builders": [
     {
@@ -14,6 +15,7 @@
       "image_licenses": ["projects/vm-options/global/licenses/enable-vmx"],
       "disk_type": "pd-ssd",
       "image_name": "executor-{{user `version`}}-{{isotime | clean_resource_name}}",
+      "tags": ["packer"],
       "account_file": "/workspace/builder-sa-key.json"
     }
   ],
@@ -24,10 +26,20 @@
       "destination": "/tmp/"
     },
     {
+      "type": "file",
+      "sources": ["executor"],
+      "destination": "/tmp/"
+    },
+    {
+      "type": "file",
+      "sources": ["ignite-ubuntu"],
+      "destination": "/tmp"
+    },
+    {
       "type": "shell",
-      "execute_command": "chmod +x {{ .Path }}; {{ .Vars }} {{ .Path }}; sudo -E bash {{ .Path }}",
+      "execute_command": "chmod +x {{ .Path }}; {{ .Vars }} sudo -E bash {{ .Path }}",
       "script": "build.sh",
-      "max_retries": 3
+      "environment_vars": ["SRC_CLI_VERSION={{user `SRC_CLI_VERSION`}}"]
     }
   ]
 }
