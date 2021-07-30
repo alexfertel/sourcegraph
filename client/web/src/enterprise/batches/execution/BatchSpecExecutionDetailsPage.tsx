@@ -198,6 +198,7 @@ enum JSONLogLineOperation {
     DETERMINING_WORKSPACES = 'DETERMINING_WORKSPACES',
     CHECKING_CACHE = 'CHECKING_CACHE',
     EXECUTING_TASKS = 'EXECUTING_TASKS',
+    EXECUTING_TASK = 'EXECUTING_TASK',
     UPLOADING_CHANGESET_SPECS = 'UPLOADING_CHANGESET_SPECS',
     CREATING_BATCH_SPEC = 'CREATING_BATCH_SPEC',
 }
@@ -211,6 +212,7 @@ const prettyOperationNames: Record<JSONLogLineOperation, string> = {
     DETERMINING_WORKSPACES: 'Determining workspaces',
     CHECKING_CACHE: 'Checking cache',
     EXECUTING_TASKS: 'Executing tasks',
+    EXECUTING_TASK: 'Executing task',
     UPLOADING_CHANGESET_SPECS: 'Uploading changeset specs',
     CREATING_BATCH_SPEC: 'Creating batch spec',
 }
@@ -227,6 +229,22 @@ interface JSONLogLine {
     timestamp: string
     status: JSONLogLineStatus
     message?: string
+    metadata: {
+        task?: Task
+        tasks?: Task[]
+    }
+}
+
+interface Step {
+    run: string
+    container: string
+}
+
+interface Task {
+    Repository: string
+    Workspace: string
+    Steps: Step[]
+    CachedStepResultsFound: boolean
 }
 
 const ParsedJsonOutput: React.FunctionComponent<{ out: string }> = ({ out }) => {
@@ -242,9 +260,7 @@ const ParsedJsonOutput: React.FunctionComponent<{ out: string }> = ({ out }) => 
                         return String(error)
                     }
                 })
-                .filter((line): line is JSONLogLine => typeof line !== 'string')
-                // Don't consider these lines for now.
-                .filter(line => line.status !== JSONLogLineStatus.PROGRESS),
+                .filter((line): line is JSONLogLine => typeof line !== 'string'),
         [out]
     )
 
@@ -276,6 +292,9 @@ const ParsedJsonOutput: React.FunctionComponent<{ out: string }> = ({ out }) => 
                                 )}
                             </span>
                         </div>
+                        {operation === JSONLogLineOperation.EXECUTING_TASKS && (
+                            <ParsedTaskExecutionOutput lines={parsed} />
+                        )}
                         <code className="d-block">
                             {[tuple[0].message, tuple[1]?.message].filter(line => !!line).join('\n')}
                         </code>
@@ -285,6 +304,45 @@ const ParsedJsonOutput: React.FunctionComponent<{ out: string }> = ({ out }) => 
         </ul>
     )
 }
+
+const ParsedTaskExecutionOutput: React.FunctionComponent<{ lines: JSONLogLine[] }> = ({ lines }) => (
+    <ul className="list-group w-100 mt-3">
+        {lines
+            .filter(line => line.operation === JSONLogLineOperation.EXECUTING_TASK)
+            .map((line, index) => {
+                console.log(line)
+                const repo = line.metadata?.task?.Repository
+                const key = `${repo || 'horse'}-${index}`
+
+                if (line.status === JSONLogLineStatus.STARTED) {
+                    return (
+                        <li className="list-group-item p-2" key={key}>
+                            <b>{repo}</b>: Starting execution of {line.metadata?.task?.Steps?.length}
+                        </li>
+                    )
+                }
+                if (line.status === JSONLogLineStatus.SUCCESS) {
+                    return (
+                        <li className="list-group-item p-2" key={key}>
+                            <b>{repo}</b>: Success!
+                        </li>
+                    )
+                }
+                if (line.status === JSONLogLineStatus.FAILED) {
+                    return (
+                        <li className="list-group-item p-2" key={key}>
+                            <b>{repo}</b>: Failed :(
+                        </li>
+                    )
+                }
+                return (
+                    <li className="list-group-item p-2" key={key}>
+                        <b>{repo}</b>: <code>{line.message}</code>
+                    </li>
+                )
+            })}
+    </ul>
+)
 
 function findLogLine(
     lines: JSONLogLine[],
